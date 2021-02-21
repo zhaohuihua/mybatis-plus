@@ -60,6 +60,10 @@ public class TableFieldInfo implements Constants {
      */
     private final String el;
     /**
+     * 属性表达式占位符: %s,jdbcType=INTEGER,typeHandler=XxxHandler
+     */
+    private final String placeholder;
+    /**
      * 属性类型
      */
     private final Class<?> propertyType;
@@ -177,10 +181,10 @@ public class TableFieldInfo implements Constants {
         JdbcType jdbcType = tableField.jdbcType();
         final Class<? extends TypeHandler> typeHandler = tableField.typeHandler();
         final String numericScale = tableField.numericScale();
-        String el = this.property;
+        String el = "%s";
         if (JdbcType.UNDEFINED != jdbcType) {
             this.jdbcType = jdbcType;
-            el += (COMMA + SqlScriptUtils.mappingJdbcType(jdbcType));
+            el += (COMMA + "jdbcType=" + jdbcType.name());
         }
         if (UnknownTypeHandler.class != typeHandler) {
             this.typeHandler = (Class<? extends TypeHandler<?>>) typeHandler;
@@ -200,12 +204,13 @@ public class TableFieldInfo implements Constants {
                 }
                 el += (COMMA + "javaType=" + javaType);
             }
-            el += (COMMA + SqlScriptUtils.mappingTypeHandler(this.typeHandler));
+            el += (COMMA + "typeHandler=" + typeHandler.getName());
         }
         if (StringUtils.isNotBlank(numericScale)) {
-            el += (COMMA + SqlScriptUtils.mappingNumericScale(Integer.valueOf(numericScale)));
+            el += (COMMA + "numericScale=" + numericScale);
         }
-        this.el = el;
+        this.el = String.format(el, this.property);
+        this.placeholder = el;
         this.initLogicDelete(dbConfig, field, existTableLogic);
 
         String column = tableField.value();
@@ -271,6 +276,7 @@ public class TableFieldInfo implements Constants {
         this.isPrimitive = this.propertyType.isPrimitive();
         this.isCharSequence = StringUtils.isCharSequence(this.propertyType);
         this.el = this.property;
+        this.placeholder = "%s";
         this.insertStrategy = dbConfig.getInsertStrategy();
         this.updateStrategy = dbConfig.getUpdateStrategy();
         this.whereStrategy = dbConfig.getSelectStrategy();
